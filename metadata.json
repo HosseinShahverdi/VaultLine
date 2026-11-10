@@ -1,0 +1,6 @@
+{
+  "name": "VaultLine",
+  "description": "Zero-knowledge, self-destructing secret-sharing tool with end-to-end client encryption, atomic burn-after-read, and tamper-evident audit logging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

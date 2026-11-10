@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  # Next.js / React Frontend Application
+  web:
+    build:
+      context: ../
+      dockerfile: ./Dockerfile.web
+    container_name: vaultline-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=production
+    depends_on:
+      - api
+    networks:
+      - vaultline-net
+
+  # Laravel 11 REST API Service (PHP 8.3-FPM + Nginx / FrankenPHP)
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.api
+    container_name: vaultline-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=VaultLine
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY:-base64:XG81mZ9+392B9v1VbN8K5yq1p5k8Z1r7M0v9L4w2A1o=}
+      - APP_DEBUG=false
+      - APP_URL=http://localhost:8000
+      - FRONTEND_URL=http://localhost:3000
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=vaultline
+      - DB_USERNAME=vaultline
+      - DB_PASSWORD=secret_db_password_vaultline_99
+      - VAULTLINE_ADMIN_TOKEN=${VAULTLINE_ADMIN_TOKEN:-vaultline-admin-demo-token}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vaultline-net
+
+  # MySQL 8.4 LTS Database (Production)
+  db:
+    image: mysql:8.4
+    container_name: vaultline-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secure_vaultline_pass
+      MYSQL_DATABASE: vaultline
+      MYSQL_USER: vaultline
+      MYSQL_PASSWORD: secret_db_password_vaultline_99
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vaultline-net
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  vaultline-net:
+    driver: bridge
